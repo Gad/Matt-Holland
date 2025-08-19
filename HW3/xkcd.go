@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// Xkcd represents a single XKCD comic, including metadata, title, transcript, and their tokenized fields.
 type Xkcd struct {
 	Num              int `json:"num"`
 	Url              string
@@ -25,8 +26,9 @@ type Xkcd struct {
 	TranscriptFields []string
 }
 
-const MAX int = 100
+const MAX int = 100 // Number of comics to fetch
 
+// processUrl fetches and unmarshal a single XKCD comic json into a XKCD struct from the given URL.
 func processUrl(url string) (Xkcd, error) {
 	joke, err := http.Get(url)
 	if err != nil {
@@ -56,6 +58,7 @@ func processUrl(url string) (Xkcd, error) {
 	}
 }
 
+// buildCollection populates jokesCollection with XKCD comics by fetching their data.
 func buildCollection(jokesCollection *[]Xkcd) {
 
 	for i := 1; i < 1+MAX; i++ {
@@ -64,7 +67,7 @@ func buildCollection(jokesCollection *[]Xkcd) {
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error from processUrl : %v", err)
-			break
+			
 		}
 
 		*jokesCollection = append(*jokesCollection, x)
@@ -72,6 +75,8 @@ func buildCollection(jokesCollection *[]Xkcd) {
 	}
 }
 
+// cleanTranscripts normalizes and cleans the transcript and title fields of each comic.
+// Removes non-alphanumeric characters and converts text to lowercase.
 func cleanTranscripts(jokesCollection *[]Xkcd) (*[]Xkcd, error) {
 
 	cleanJokes := make([]Xkcd, MAX)
@@ -92,6 +97,7 @@ func cleanTranscripts(jokesCollection *[]Xkcd) (*[]Xkcd, error) {
 	return &cleanJokes, nil
 }
 
+// splitTranscript tokenizes the transcript field of each comic into words.
 func splitTranscript(jokesCollection *[]Xkcd) {
 
 	for i := range *jokesCollection {
@@ -100,6 +106,7 @@ func splitTranscript(jokesCollection *[]Xkcd) {
 
 }
 
+// splitTitle tokenizes the title field of each comic into words.
 func splitTitle(jokesCollection *[]Xkcd) {
 
 	for i := range *jokesCollection {
@@ -108,6 +115,8 @@ func splitTitle(jokesCollection *[]Xkcd) {
 
 }
 
+// createIndex builds an index mapping between each word to the comic numbers where it appears
+// in either the title or transcript.
 func createIndex(JokesCollection *[]Xkcd) map[string][]int {
 
 	// for each key (a word), provides the list of joke numbers where the word is present in the
@@ -141,6 +150,8 @@ func createIndex(JokesCollection *[]Xkcd) map[string][]int {
 	return index
 }
 
+// indexSearch returns the list of comic numbers containing the searchTerm in their title or transcript.
+// Returns nil if the term is not found.
 func indexSearch(searchTerm string, index map[string][]int) []int {
 
 	val, exists := index[searchTerm]
@@ -151,6 +162,7 @@ func indexSearch(searchTerm string, index map[string][]int) []int {
 
 }
 
+// printResults displays the search results for a given term, listing matching comics and some metadata.
 func printResults(searchTerm string, searchResults []int, jokesCollection []Xkcd) {
 	fmt.Printf("Search for \"%s\" returns :\n", searchTerm)
 
@@ -168,6 +180,7 @@ func printResults(searchTerm string, searchResults []int, jokesCollection []Xkcd
 	}
 }
 
+// Entry point of the program.
 func main() {
 
 	jokesCollection := make([]Xkcd, 0, MAX)
