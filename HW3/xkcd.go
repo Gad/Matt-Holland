@@ -26,7 +26,7 @@ type Xkcd struct {
 	TranscriptFields []string
 }
 
-const MAX int = 100 // Number of comics to fetch
+const MAX int = 500 // Number of comics to fetch
 
 // processUrl fetches and unmarshal a single XKCD comic json into a XKCD struct from the given URL.
 func processUrl(url string) (Xkcd, error) {
@@ -66,7 +66,7 @@ func buildCollection(jokesCollection *[]Xkcd) {
 		x, err := processUrl("https://xkcd.com/" + strconv.Itoa(i+1) + "/info.0.json")
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error from processUrl : %v", err)
+			fmt.Fprintf(os.Stderr, "Error from processUrl : %v - skip comic %d", err, i)
 			continue
 		}
 
