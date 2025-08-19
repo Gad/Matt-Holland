@@ -67,7 +67,7 @@ func buildCollection(jokesCollection *[]Xkcd) {
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error from processUrl : %v", err)
-			
+			continue
 		}
 
 		*jokesCollection = append(*jokesCollection, x)
