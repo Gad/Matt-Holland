@@ -151,6 +151,23 @@ func indexSearch(searchTerm string, index map[string][]int) []int {
 
 }
 
+func printResults(searchTerm string, searchResults []int, jokesCollection []Xkcd) {
+	fmt.Printf("Search for \"%s\" returns :\n", searchTerm)
+
+	for _, num := range searchResults {
+		for j := range jokesCollection {
+			if jokesCollection[j].Num == num {
+				fmt.Printf("https://xkcd.com/%d/ %s/%s/%s \"%s\"\n",
+					num,
+					jokesCollection[j].Day,
+					jokesCollection[j].Month,
+					jokesCollection[j].Year,
+					jokesCollection[j].Title)
+			}
+		}
+	}
+}
+
 func main() {
 
 	jokesCollection := make([]Xkcd, 0, MAX)
@@ -172,27 +189,14 @@ func main() {
 	index := createIndex(cleanJokesCollection)
 	log.Println("Done with creating index")
 
-	_ = index
+
 
 	if l := len(os.Args); l != 1 {
 		for i := 1; i < l; i++ {
 			searchTerm := os.Args[i]
 			r := indexSearch(searchTerm, index)
 			if r != nil {
-				fmt.Printf("Search for \"%s\" returns :\n", searchTerm)
-
-				for _, num := range r {
-					for j := range jokesCollection {
-						if jokesCollection[j].Num == num {
-							fmt.Printf("https://xkcd.com/%d/ %s/%s/%s \"%s\"\n",
-								num,
-								jokesCollection[j].Day,
-								jokesCollection[j].Month,
-								jokesCollection[j].Year,
-								jokesCollection[j].Title)
-						}
-					}
-				}
+				printResults(searchTerm, r, jokesCollection)
 			}
 		}
 
