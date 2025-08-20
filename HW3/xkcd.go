@@ -206,7 +206,7 @@ func main() {
 
 	if l := len(os.Args); l != 1 {
 		for i := 1; i < l; i++ {
-			searchTerm := os.Args[i]
+			searchTerm := strings.ToLower(os.Args[i] )
 			r := indexSearch(searchTerm, index)
 			if r != nil {
 				printResults(searchTerm, r, jokesCollection)
