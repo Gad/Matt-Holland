@@ -10,55 +10,59 @@ import (
 	"strconv"
 )
 
-type item = string   // alias
-type price = float64 //alias
+type Item string   // define as new type
+type Price float64 // define as new type
 
-type Db map[item]price
+
+func (p Price) String() string{
+	return fmt.Sprintf("%.2f€", p)
+}
+type Db map[Item]Price
 
 var db = Db{"car": 10000, "computer": 500}
 
-func (db *Db) Create(i item, p price) {
+func (db *Db) Create(i Item, p Price) {
 	(*db)[i] = p
 
 }
 
-func (db *Db) Read(i item) (float64, error) {
+func (db *Db) Read(i Item) (Price, error) {
 
 	p, exists := (*db)[i]
 	if !exists {
-		return 0, fmt.Errorf("Error reading price of %s : no such item in database", i)
+		return 0, fmt.Errorf("Error reading Price of %s : no such Item in database", i)
 	}
 	return p, nil
 }
 
-func (db *Db) Update(i item, p price) error {
+func (db *Db) Update(i Item, p Price) error {
 
 	if _, exists := (*db)[i]; exists {
 		(*db)[i] = p
 		return nil
 	}
-	return fmt.Errorf("Error updating %s with price %f : no such item in database", i, p)
+	return fmt.Errorf("Error updating %s with Price %s : no such Item in database", i, p)
 }
 
-func (db *Db) Delete(i item) {
+func (db *Db) Delete(i Item) {
 	delete(*db, i)
 }
 
-func parseQuery(q url.Values) (string, float64, error) {
+func parseQuery(q url.Values) (Item, Price, error) {
 	var (
-		i item
-		p price
+		i Item
+		p Price
 	)
 	for k, v := range q {
 		switch k {
 		case "item":
-			i = v[0]
+			i = Item(v[0])
 		case "price":
 			price, err := strconv.ParseFloat(v[0], 64)
 			if err != nil {
 				return i, p, fmt.Errorf("Price Not a number")
 			}
-			p = price
+			p = Price(price)
 		default:
 			log.Printf("unsupported query parameter %s\n", k)
 		}
@@ -78,7 +82,7 @@ var update = func(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 		return
 	}
-	log.Printf("Updated %s with price %f", i, p)
+	log.Printf("Updated %s with Price %s", i, p)
 }
 
 var read = func(w http.ResponseWriter, r *http.Request) {
@@ -93,14 +97,14 @@ var read = func(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 		return
 	}
-	log.Printf("Price for item %s is %f", i, p)
+	log.Printf("Price for Item %s is %s", i, p)
 }
 
 var create = func(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, p, err := parseQuery(q)
 	if i == "" {
-		log.Println("Cannot create empty item")
+		log.Println("Cannot create empty Item")
 		return
 	}
 	if err != nil {
@@ -108,18 +112,18 @@ var create = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := db.Read(i); err == nil {
-		log.Printf("item %s already in db, use update instead", i)
+		log.Printf("Item %s already in db, use update instead", i)
 		return
 	}
 	db.Create(i, p)
-	log.Printf("Created item %s with price %f", i, p)
+	log.Printf("Created Item %s with Price %s", i, p)
 }
 
 var deleteKey = func(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, _, err := parseQuery(q)
 	if i == "" {
-		log.Println("item name required with /delete query")
+		log.Println("Item name required with /delete query")
 		return
 	}
 	if err != nil {
@@ -127,7 +131,7 @@ var deleteKey = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db.Delete(i)
-	log.Printf("Deleted item %s", i)
+	log.Printf("Deleted Item %s", i)
 }
 
 func withLogging(h http.HandlerFunc) http.HandlerFunc {
