@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 )
@@ -13,10 +12,10 @@ import (
 type Item string   // define as new type
 type Price float64 // define as new type
 
-
-func (p Price) String() string{
+func (p Price) String() string {
 	return fmt.Sprintf("%.2f€", p)
 }
+
 type Db map[Item]Price
 
 var db = Db{"car": 10000, "computer": 500}
@@ -48,39 +47,35 @@ func (db *Db) Delete(i Item) {
 	delete(*db, i)
 }
 
-func parseQuery(q url.Values) (Item, Price, error) {
+func parseQuery(r *http.Request) (Item, Price, error) {
 	var (
 		i Item
 		p Price
 	)
-	for k, v := range q {
-		switch k {
-		case "item":
-			i = Item(v[0])
-		case "price":
-			price, err := strconv.ParseFloat(v[0], 64)
-			if err != nil {
-				return i, p, fmt.Errorf("Price Not a number")
-			}
-			p = Price(price)
-		default:
-			log.Printf("unsupported query parameter %s\n", k)
+	q := r.URL.Query()
+	i = Item(q.Get("item"))
+	price := q.Get("price")
+	if price != "" {
+		pp, err := strconv.ParseFloat(price, 32)
+		if err != nil {
+			return i, p, fmt.Errorf("Error converting price :%q", err)
 		}
+		p = Price(pp)
 	}
+
 	return i, p, nil
 }
 
 var update = func(w http.ResponseWriter, r *http.Request) {
 
-	q := r.URL.Query()
-	i, p, err := parseQuery(q)
+	i, p, err := parseQuery(r)
 	if err != nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Println(err.Error())
 		return
 	}
 	if err := db.Update(i, p); err != nil {
-		http.Error(w,"", http.StatusNotFound )
+		http.Error(w, "", http.StatusNotFound)
 		log.Println(err.Error())
 		return
 	}
@@ -88,16 +83,16 @@ var update = func(w http.ResponseWriter, r *http.Request) {
 }
 
 var read = func(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	i, _, err := parseQuery(q)
+
+	i, _, err := parseQuery(r)
 	if err != nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Println(err.Error())
 		return
 	}
 	p, err := db.Read(i)
 	if err != nil {
-		http.Error(w,"", http.StatusNotFound )
+		http.Error(w, "", http.StatusNotFound)
 		log.Println(err.Error())
 		return
 	}
@@ -105,20 +100,20 @@ var read = func(w http.ResponseWriter, r *http.Request) {
 }
 
 var create = func(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	i, p, err := parseQuery(q)
+
+	i, p, err := parseQuery(r)
 	if i == "" {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Println("Cannot create empty Item")
 		return
 	}
 	if err != nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Println(err.Error())
 		return
 	}
 	if _, err := db.Read(i); err == nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Printf("Item %s already in db, use update instead", i)
 		return
 	}
@@ -127,15 +122,15 @@ var create = func(w http.ResponseWriter, r *http.Request) {
 }
 
 var deleteKey = func(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	i, _, err := parseQuery(q)
+
+	i, _, err := parseQuery(r)
 	if i == "" {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Println("Item name required with /delete query")
 		return
 	}
 	if err != nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w, "", http.StatusBadRequest)
 		log.Println(err.Error())
 		return
 	}
@@ -144,7 +139,7 @@ var deleteKey = func(w http.ResponseWriter, r *http.Request) {
 }
 
 func withLogging(h http.HandlerFunc) http.HandlerFunc {
-	logFunc := func(w http.ResponseWriter, r *http.Request){
+	logFunc := func(w http.ResponseWriter, r *http.Request) {
 		mw := io.MultiWriter(os.Stdout, w)
 		log.SetOutput(mw)
 		h.ServeHTTP(w, r)
@@ -158,7 +153,6 @@ func main() {
 	http.HandleFunc("/read", withLogging(read))
 	http.HandleFunc("/update", withLogging(update))
 	http.HandleFunc("/delete", withLogging(deleteKey)) // delete already in use by Go
-
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
