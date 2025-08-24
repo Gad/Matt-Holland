@@ -75,10 +75,12 @@ var update = func(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, p, err := parseQuery(q)
 	if err != nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println(err.Error())
 		return
 	}
 	if err := db.Update(i, p); err != nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println(err.Error())
 		return
 	}
@@ -89,11 +91,13 @@ var read = func(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, _, err := parseQuery(q)
 	if err != nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println(err.Error())
 		return
 	}
 	p, err := db.Read(i)
 	if err != nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println(err.Error())
 		return
 	}
@@ -104,14 +108,17 @@ var create = func(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, p, err := parseQuery(q)
 	if i == "" {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println("Cannot create empty Item")
 		return
 	}
 	if err != nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println(err.Error())
 		return
 	}
 	if _, err := db.Read(i); err == nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Printf("Item %s already in db, use update instead", i)
 		return
 	}
@@ -123,10 +130,12 @@ var deleteKey = func(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, _, err := parseQuery(q)
 	if i == "" {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println("Item name required with /delete query")
 		return
 	}
 	if err != nil {
+		http.Error(w,"", http.StatusBadRequest )
 		log.Println(err.Error())
 		return
 	}
