@@ -80,7 +80,7 @@ var update = func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := db.Update(i, p); err != nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w,"", http.StatusNotFound )
 		log.Println(err.Error())
 		return
 	}
@@ -97,7 +97,7 @@ var read = func(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := db.Read(i)
 	if err != nil {
-		http.Error(w,"", http.StatusBadRequest )
+		http.Error(w,"", http.StatusNotFound )
 		log.Println(err.Error())
 		return
 	}
