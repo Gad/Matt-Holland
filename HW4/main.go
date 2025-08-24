@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 )
 
@@ -126,15 +128,24 @@ var deleteKey = func(w http.ResponseWriter, r *http.Request) {
 	}
 	db.Delete(i)
 	log.Printf("Deleted item %s", i)
+}
 
+func withLogging(h http.HandlerFunc) http.HandlerFunc {
+	logFunc := func(w http.ResponseWriter, r *http.Request){
+		mw := io.MultiWriter(os.Stdout, w)
+		log.SetOutput(mw)
+		h.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(logFunc)
 }
 
 func main() {
 
-	http.HandleFunc("/create", create)
-	http.HandleFunc("/read", read)
-	http.HandleFunc("/update", update)
-	http.HandleFunc("/delete", deleteKey) // delete already in use by Go
+	http.HandleFunc("/create", withLogging(create))
+	http.HandleFunc("/read", withLogging(read))
+	http.HandleFunc("/update", withLogging(update))
+	http.HandleFunc("/delete", withLogging(deleteKey)) // delete already in use by Go
+
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
